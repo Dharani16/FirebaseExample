@@ -1,9 +1,11 @@
 package com.dharani.firebaseexample;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -20,12 +22,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
+    public static final String ARTIST_NAME = "artistname";
+    public static final String ARTIST_ID = "artistid";
     EditText editTextName;
     Button buttonAdd;
     Spinner spinnerGenres;
     ListView list;
-    List<Artist> artistList;
+    List<Artist> artists;
     DatabaseReference databaseArtists;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +42,23 @@ public class MainActivity extends AppCompatActivity {
         spinnerGenres = (Spinner)findViewById(R.id.spinnerGenres);
 
         list = (ListView)findViewById(R.id.listViewID);
-        artistList = new ArrayList<>();
+        artists = new ArrayList<>();
 
         buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 addArtist();
+            }
+        });
+
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Artist artist = artists.get(position);
+                Intent intent = new Intent(getApplicationContext(),AddTrackActivity.class);
+                intent.putExtra(ARTIST_ID,artist.getArtistId());
+                intent.putExtra(ARTIST_NAME,artist.getArtistName());
+                startActivity(intent);
             }
         });
     }
@@ -56,12 +70,12 @@ public class MainActivity extends AppCompatActivity {
         databaseArtists.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                //artistList.clear();
+                //artists.clear();
                 for (DataSnapshot artistSnapshot : dataSnapshot.getChildren()){
                     Artist artist = artistSnapshot.getValue(Artist.class);
-                    artistList.add(artist);
+                    artists.add(artist);
                 }
-                ArtistList adapter = new ArtistList(MainActivity.this,artistList);
+                ArtistList adapter = new ArtistList(MainActivity.this, artists);
                 list.setAdapter(adapter);
             }
 
@@ -81,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
             String id = databaseArtists.push().getKey();
             Artist artist = new Artist(id,name,genre);
             databaseArtists.child(id).setValue(artist);
+            editTextName.setText("");
             Toast.makeText(this, "Artist added", Toast.LENGTH_SHORT).show();
         }
         else {
