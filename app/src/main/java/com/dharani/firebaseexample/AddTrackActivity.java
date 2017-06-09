@@ -12,8 +12,14 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AddTrackActivity extends AppCompatActivity {
 
@@ -23,6 +29,7 @@ public class AddTrackActivity extends AppCompatActivity {
     Button btAdd;
     ListView listviewTracks;
     DatabaseReference databaseTracks;
+    List<Track> tracks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +43,8 @@ public class AddTrackActivity extends AppCompatActivity {
         btAdd = (Button)findViewById(R.id.buttonAddTrack);
         listviewTracks = (ListView)findViewById(R.id.listViewTracks);
 
+        tracks = new ArrayList<>();
+
         Intent inte = getIntent();
         String id = inte.getStringExtra(MainActivity.ARTIST_ID);
         String name = inte.getStringExtra(MainActivity.ARTIST_NAME);
@@ -47,6 +56,28 @@ public class AddTrackActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 saveTrack();
+            }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        databaseTracks.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                tracks.clear();
+                for (DataSnapshot trackSnapshot : dataSnapshot.getChildren()){
+                    Track track = trackSnapshot.getValue(Track.class);
+                    tracks.add(track);
+                }
+                TrackList trackListAdapter = new TrackList(AddTrackActivity.this,tracks);
+                listviewTracks.setAdapter(trackListAdapter);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
     }
